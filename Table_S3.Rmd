@@ -1,0 +1,153 @@
+```{r TableS3,  results = "asis", out.width = "100%"}
+
+# Supplementary Table: Baseline characteristics by longitudinal MRS availability
+
+baseline_data <- NeuroMET %>% filter(visit == "t1", !is.na(mrs_availability))
+
+# 2. Sample size per group
+n_counts_mrs <- baseline_data %>%
+  count(mrs_availability) %>%
+  mutate(label = paste0("n = ", n)) %>%
+  select(-n) %>%
+  pivot_wider(names_from = mrs_availability, values_from = label) %>%
+  mutate(variable = "Sample size")
+
+# 3. Continuous variables: mean [95% CI] + normality-informed test choice
+vars_cont <- c("age", "edu", "mmse", "nmm", "glu", "gaba", "glu_gaba", "pTau", "GFAP")
+
+cont_summary_mrs <- vars_cont %>%
+  map_dfr(function(var) {
+    baseline_data %>%
+      group_by(mrs_availability) %>%
+      summarise(
+        mean = mean(.data[[var]], na.rm = TRUE),
+        se   = sd(.data[[var]], na.rm = TRUE) / sqrt(sum(!is.na(.data[[var]]))),
+        n    = sum(!is.na(.data[[var]])),
+        .groups = "drop"
+      ) %>%
+      mutate(
+        ci_low  = mean - qt(0.975, df = n - 1) * se,
+        ci_high = mean + qt(0.975, df = n - 1) * se,
+        mean_ci = if (var %in% c("age", "edu", "mmse", "glu")) {
+          sprintf("%.1f [%.1f;%.1f]", mean, ci_low, ci_high)
+        } else {
+          sprintf("%.2f [%.2f;%.2f]", mean, ci_low, ci_high)
+        },
+        variable = var
+      ) %>%
+      select(variable, mrs_availability, mean_ci)
+  })
+
+cont_table_wide_mrs <- cont_summary_mrs %>%
+  pivot_wider(names_from = mrs_availability, values_from = mean_ci)
+
+# Choose t-test vs. Wilcoxon per variable based on Shapiro-Wilk normality in both groups
+pvals_cont_mrs <- vars_cont %>%
+  map_dfr(function(var) {
+    g1 <- baseline_data %>% filter(mrs_availability == "Repeat MRS (≥2 visits)") %>% pull(.data[[var]]) %>% na.omit()
+    g2 <- baseline_data %>% filter(mrs_availability == "Baseline MRS only") %>% pull(.data[[var]]) %>% na.omit()
+
+    normal_ok <- tryCatch({
+      shapiro.test(g1)$p.value > 0.05 && shapiro.test(g2)$p.value > 0.05
+    }, error = function(e) FALSE)  # shapiro.test fails if n<3; treat as non-normal
+
+    if (normal_ok) {
+      pval <- t.test(g1, g2)$p.value
+      test_used <- "t-test"
+    } else {
+      pval <- wilcox.test(g1, g2)$p.value
+      test_used <- "Wilcoxon"
+    }
+
+    tibble(variable = var, `p-value` = sprintf("%.3f", pval), test = test_used)
+  })
+
+cont_table_wide_mrs <- cont_table_wide_mrs %>%
+  left_join(pvals_cont_mrs, by = "variable")
+
+# 4. Categorical variables: sex, APOEε4
+categorical_vars <- c("sex", "APOEe4")
+
+cat_summary_mrs <- categorical_vars %>%
+  map_dfr(function(var) {
+    baseline_data %>%
+      group_by(mrs_availability, value = .data[[var]]) %>%
+      summarise(n = n(), .groups = "drop") %>%
+      group_by(mrs_availability) %>%
+      mutate(pct = n / sum(n) * 100,
+             label = paste0(n, " (", round(pct, 0), "%)"),
+             variable = paste0(var, " = ", value)) %>%
+      ungroup() %>%
+      select(variable, mrs_availability, label)
+  })
+
+cat_table_wide_mrs <- cat_summary_mrs %>%
+  pivot_wider(names_from = mrs_availability, values_from = label)
+
+pvals_cat_mrs <- categorical_vars %>%
+  map_dfr(function(var) {
+    tbl <- table(baseline_data[[var]], baseline_data$mrs_availability)
+    pval <- tryCatch({
+      if (any(tbl < 5)) fisher.test(tbl)$p.value else chisq.test(tbl)$p.value
+    }, error = function(e) NA)
+    test_used <- if (any(tbl < 5)) "Fisher" else "chi-square"
+    tibble(base_var = var, `p-value` = ifelse(is.na(pval), NA, sprintf("%.3f", pval)), test = test_used)
+  })
+
+pvals_cat_mrs_2 <- tibble(
+  variable = c("sex = 0", "sex = 1", "APOEe4 = non-carrier", "APOEe4 = carrier"),
+  `p-value` = c(pvals_cat_mrs$`p-value`[1], pvals_cat_mrs$`p-value`[1],
+                pvals_cat_mrs$`p-value`[2], pvals_cat_mrs$`p-value`[2]),
+  test = c(pvals_cat_mrs$test[1], pvals_cat_mrs$test[1],
+           pvals_cat_mrs$test[2], pvals_cat_mrs$test[2])
+)
+
+cat_table_wide_mrs <- cat_table_wide_mrs %>%
+  left_join(pvals_cat_mrs_2, by = "variable")
+
+# 5. Combine
+final_table_mrs <- bind_rows(n_counts_mrs, cont_table_wide_mrs, cat_table_wide_mrs) %>%
+  select(variable, `Repeat MRS (≥2 visits)`, `Baseline MRS only`, `p-value`, test) %>%
+  mutate(variable = case_when(
+    variable == "sex = 1" ~ "Sex = Female",
+    variable == "sex = 0" ~ "Sex = Male",
+    TRUE ~ variable
+  )) %>%
+  filter(!(variable %in% c("Sex = Male", "APOEe4 = non-carrier")))
+
+final_table_mrs_cleaned <- final_table_mrs %>%
+  mutate(variable = case_when(
+    variable == "age" ~ "Age [years]",
+    variable == "Sex = Female" ~ "Sex (Female)",
+    variable == "edu" ~ "Education [years]",
+    variable == "APOEe4 = carrier" ~ "APOEε4 (carrier)",
+    variable == "mmse" ~ "MMSE",
+    variable == "nmm" ~ "Memory (NMM)",
+    variable == "glu" ~ "MRS Glutamate [mmol/L]",
+    variable == "gaba" ~ "MRS GABA [mmol/L]",
+    variable == "glu_gaba" ~ "log(Glutamate/GABA)",
+    variable == "pTau" ~ "Plasma pTau-181 [pg/mL]",
+    variable == "GFAP" ~ "GFAP [pg/mL]",
+    TRUE ~ variable
+  ))
+
+desired_order <- c("Sample size", "Age [years]", "Sex (Female)", "Education [years]",
+                    "APOEε4 (carrier)", "MMSE", "Memory (NMM)", "MRS Glutamate [mmol/L]",
+                    "MRS GABA [mmol/L]", "log(Glutamate/GABA)", "Plasma pTau-181 [pg/mL]", "GFAP [pg/mL]")
+
+final_table_mrs_ordered <- final_table_mrs_cleaned %>%
+  mutate(variable = factor(variable, levels = desired_order)) %>%
+  arrange(variable) %>%
+  mutate(`p-value` = ifelse(as.numeric(`p-value`) <= 0.001, "<0.001", `p-value`))
+
+final_table_mrs_ordered %>%
+  kable(
+    format = "html",
+    digits = 2,
+    col.names = c("Variable", "Repeat MRS (≥2 visits)", "Baseline MRS only", "p-value", "Test"),
+    caption = "<b>Supplementary Table S3: Baseline characteristics by longitudinal MRS availability.</b> Participants are grouped by whether they contributed a glutamate measurement at ≥2 visits (Repeat MRS) or only at visit 1 (Baseline MRS only); participants with no MRS data at any visit (n=8) are excluded, consistent with the main analytic sample. Continuous variables are compared via Welch's t-test or Wilcoxon rank-sum test depending on normality (Shapiro-Wilk, P>0.05 in both groups); categorical variables via chi-square or Fisher's exact test depending on expected cell counts.",
+    align = "c"
+  ) %>%
+  kable_paper()
+    
+```
