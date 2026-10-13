@@ -1,0 +1,96 @@
+```{r missings, results = "asis", out.width = "100%"}
+############missings at t1
+dep_vars <- map_chr(models, ~ all.vars(formula(.x))[1])
+
+# Filtered data once (visit == "t1")
+data_t1 <- NeuroMET %>% filter(visit == "t1")
+
+# For each model/dependent variable, count missing in that var by diagnose_group
+missingt1_table <- map2_df(
+  names(models), dep_vars,
+  ~ data_t1 %>%
+    group_by(diagnose_group) %>%
+    summarise(missing = sum(is.na(.data[[.y]])), .groups = "drop") %>%
+    mutate(model = .x)
+)
+
+# Convert to wide format: rows = models, columns = diagnose_group, values = missing counts
+missingt1_wide <- missingt1_table %>%
+  pivot_wider(names_from = diagnose_group, values_from = missing) %>%
+  select(model, everything()) %>%
+  arrange(match(model, names(models)))
+
+#missingt1_wide
+# One participant in the CN Aβ+ group had missing MRS data at visit 1 but was included in the analysis because MRS was available at a follow-up visit.
+
+############missings at follow-ups
+dep_vars <- map_chr(models, ~ all.vars(formula(.x))[1])
+
+# Filtered data once (visit == "t1")
+data_followup <- NeuroMET %>% filter(!(visit == "t1"))
+
+# For each model/dependent variable, count missing in that var by diagnose_group
+missing_followup_table <- map2_df(
+  names(models), dep_vars,
+  ~ data_followup %>%
+    group_by(diagnose_group) %>%
+    summarise(missing = sum(is.na(.data[[.y]])), .groups = "drop") %>%
+    mutate(model = .x)
+)
+
+# Convert to wide format: rows = models, columns = diagnose_group, values = missing counts
+missing_followup_wide <- missing_followup_table %>%
+  pivot_wider(names_from = diagnose_group, values_from = missing) %>%
+  select(model, everything()) %>%
+  arrange(match(model, names(models)))
+
+#missing_followup_wide
+
+##### table 
+# Adjust "MRS_Glu" to the actual variable you're using for MRS data
+# Count available participants
+table_n <- NeuroMET %>%
+  group_by(diagnose_group, visit) %>%
+  tally() %>%
+  pivot_wider(names_from = diagnose_group, values_from = n)
+
+# Calculate mean (SD) time from baseline
+table_time <- NeuroMET %>%
+  group_by(diagnose_group, visit) %>%
+  summarize(`time from V1 [years]` = paste0(round(mean(year, na.rm = TRUE), 1), 
+                                            " (", round(sd(year, na.rm = TRUE), 1), ")"), .groups = "drop") %>%
+  pivot_wider(names_from = diagnose_group, values_from = `time from V1 [years]`)
+
+# Count missing MRS data
+table_miss <- NeuroMET %>%
+  group_by(diagnose_group, visit) %>%
+  summarize(`n missing MRS` = sum(is.na(glu)), .groups = "drop") %>%
+  pivot_wider(names_from = diagnose_group, values_from = `n missing MRS`)
+
+# Ensure all values are character before binding rows
+table_n <- table_n %>% mutate(across(-visit, as.character))
+table_time <- table_time %>% mutate(across(-visit, as.character))
+table_miss <- table_miss %>% mutate(across(-visit, as.character))
+# Combine all parts
+table_combined <- bind_rows(
+  mutate(table_n, rowname = "n"),
+  mutate(table_time, rowname = "time from V1 [years]"),
+  mutate(table_miss, rowname = "n missing MRS")
+) %>%
+  arrange(visit, factor(rowname, levels = c("n", "n missing MRS", "time from V1 [years]"))) %>%
+  select(rowname, everything(), -visit)
+
+# Print with row grouping per visit
+Table_2 <- table_combined %>%
+  kbl(
+    caption = "<b>Table 2: Observations grouped by diagnosis and visit. </b> Time from visit 1 is presented as mean (SD). The rows “n missing MRS” indicate how many participants had no MRS data at the respective visit. Further statistical models might contain fewer observations according to data availability. <i>Abbreviations: AD = Alzheimer’s Disease, CN = Cognitively Normal, MCI = Mild Cognitive Impairment, MRS = Magnetic Resonance Spectroscopy, V1 = Visit 1 </i>",
+    align = "c"
+  ) %>%
+  kable_styling(bootstrap_options = "condensed", full_width = FALSE) %>%
+  pack_rows("Visit 1", 1, 3) %>%
+  pack_rows("Visit 2", 4, 6) %>%
+  pack_rows("Visit 3", 7, 9) %>%
+  pack_rows("Visit 4", 10, 12) %>%
+  pack_rows("Visit 5", 13, 15)
+
+```
