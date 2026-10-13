@@ -1,0 +1,81 @@
+```{r Model1_excl, include = FALSE}
+NeuroMETs <- NeuroMET %>% filter (!(record_id == "NeuroMetXXX" & visit == "t4"))
+
+lmer_long_glu_groupwise_s <- lmer(glu ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id),
+       data = NeuroMETs, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+#test for best fit
+# lmer_long_glu_groupwise_s_2 <- lmer(glu ~ diagnose_group * year + ns(age_bl, df = 3) + sex + (1|record_id),
+#        data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# anova(lmer_long_glu_groupwise_s, lmer_long_glu_groupwise_s_2)
+
+
+lmer_long_gaba_groupwise_s <- lmer(gaba ~ diagnose_group * year + ns(age_bl, df = 1) + sex+ (1|record_id),
+       data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+#test for best fit
+# lmer_long_gaba_groupwise_s_2 <- lmer(gaba ~ diagnose_group * year + ns(age_bl, df = 2)+ sex  + (1|record_id),
+#        data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# anova(lmer_long_gaba_groupwise_s , lmer_long_gaba_groupwise_s_2)
+
+
+lmer_long_glu_gaba_groupwise_s   <- lmer(glu_gaba ~ diagnose_group * year + ns(age_bl, df = 1) + sex+ (1|record_id),
+       data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+#test for best fit
+# lmer_long_glu_gaba_groupwise_s_2 <- lmer(glu_gaba ~ diagnose_group * year + ns(age_bl, df = 2)+sex  + (1|record_id),
+#        data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# anova(lmer_long_glu_gaba_groupwise_s  , lmer_long_glu_gaba_groupwise_s_2)
+
+
+lmer_long_pTau_groupwise_s <- lmer(pTau ~ diagnose_group * year + ns(age_bl, df = 1) + sex +(1|record_id),
+       data = NeuroMETs,REML = TRUE, na.action = na.omit)
+# lmer_long_pTau_groupwise_s_2 <- lmer(pTau ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id),
+#        data = NeuroMETs,REML = TRUE, na.action = na.omit)
+# anova(lmer_long_pTau_groupwise_s, lmer_long_pTau_groupwise_s_2)
+
+
+lmer_long_nmm_groupwise_s <- lmer(nmm ~ diagnose_group * year + ns(age_bl, df = 1) + sex+ (1|record_id),
+       data = NeuroMETs,REML = TRUE, na.action = na.omit)
+# lmer_long_nmm_groupwise_s_2 <- lmer(nmm ~ diagnose_group * year + ns(age_bl, df = 2) + sex+ (1|record_id),
+#        data = NeuroMETs,REML = TRUE, na.action = na.omit)
+# anova(lmer_long_nmm_groupwise_s, lmer_long_nmm_groupwise_s_2)
+
+lmer_long_gfap_groupwise_s <- lmer(GFAP ~ diagnose_group * year + ns(age_bl, df = 1) + sex + (1|record_id), data = NeuroMETs,REML = TRUE, na.action = na.omit)
+# lmer_long_gfap_groupwise_s_2 <- lmer(GFAP ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id), data = NeuroMETs,REML = TRUE, na.action = na.omit)
+# anova(lmer_long_gfap_groupwise_s, lmer_long_gfap_groupwise_s_2)
+
+lmer_long_gln_groupwise_s       <- lmer(gln ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id), data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = gln_inv_aCRLB)
+#test for best fit
+# lmer_long_gln_groupwise_s_2       <- lmer(gln ~ diagnose_group * year + ns(age_bl, df = 3) + sex + (1|record_id),
+#        data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = gln_inv_aCRLB)
+# anova(lmer_long_gln_groupwise_s, lmer_long_gln_groupwise_s_2)
+
+lmer_long_glu_gln_groupwise_s       <- lmer(glu_gln ~ diagnose_group * year + ns(age_bl, df = 1) + sex + (1|record_id), data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = w_log_glu_gln_ratio)
+#test for best fit
+# lmer_long_glu_gln_groupwise_s_2       <- lmer(glu_gln ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id),
+#        data = NeuroMETs,REML = TRUE, na.action = na.omit, weights = w_log_glu_gln_ratio)
+# anova(lmer_long_glu_gln_groupwise_s, lmer_long_glu_gln_groupwise_s_2)
+```
+
+```{r stdcoeffs_s, results = 'hide', warning = FALSE}
+
+##standardized primary results
+glu_slopes_s <- emtrends(lmer_long_glu_groupwise_s, var = "year", specs = ~ diagnose_group,
+                       infer = c(TRUE, TRUE))%>%  # infer = CI + test
+              as.data.frame()
+
+gaba_slopes_s <- emtrends(lmer_long_gaba_groupwise_s, var = "year", specs = ~ diagnose_group,
+                       infer = c(TRUE, TRUE))%>%  # infer = CI + test
+              as.data.frame()
+
+glu_gaba_slopes_s <- emtrends(lmer_long_glu_gaba_groupwise_s, var = "year", specs = ~ diagnose_group, infer = c(TRUE, TRUE))%>%  # infer = CI + test
+              as.data.frame()
+
+glu_slopes_df_s <- glu_slopes_s %>%
+  mutate(std_beta    = year.trend / sd_glu_cn_neg, std_lower.CL = lower.CL   / sd_glu_cn_neg,
+         std_upper.CL = upper.CL   / sd_glu_cn_neg) #sd_glu_cn_neg is the same for NeuroMET and NeuroMETs
+gaba_slopes_df_s <- gaba_slopes_s %>%
+  mutate(std_beta    = year.trend / sd_gaba_cn_neg, std_lower.CL = lower.CL   / sd_gaba_cn_neg,
+         std_upper.CL = upper.CL   / sd_gaba_cn_neg)
+glu_gaba_slopes_df_s <- glu_gaba_slopes_s %>%
+  mutate(std_beta    = year.trend / sd_glu_gaba_cn_neg, std_lower.CL = lower.CL   / sd_glu_gaba_cn_neg, std_upper.CL = upper.CL   / sd_glu_gaba_cn_neg)
+
+```
