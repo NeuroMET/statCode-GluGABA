@@ -2,7 +2,7 @@
 
 This repository contains the analysis code supporting the manuscript:
 
-Göschel et al., 2026, "Longitudinal 7T MRS Study of Glutamate and GABA Dynamics in Alzheimer's Disease Progression: From hyper- to hypoexcitation".
+Göschel et al., 2026, "Longitudinal 7T MRS Study of Glutamate and GABA Dynamics in Alzheimer's Disease Progression: From hyper- toward hypoexcitation".
 
 ## Overview
 We analyzed longitudinal 7T magnetic resonance spectroscopy (MRS) data to investigate
@@ -10,9 +10,9 @@ stage-dependent trajectories of glutamate and GABA across the Alzheimer’s dise
 Analyses were performed using linear mixed-effects models with natural splines.
 
 ## Reproducibility
-Due to data protection regulations, raw participant data cannot be shared.
+Due to data protection regulations, raw participant data cannot be shared here.
 However, all statistical models, preprocessing steps, and figure-generation code are provided.
 
 ## Software
-- R version: 4.5.1, R Core Team, 2025
+- R version: 4.6.0, R Core Team, 2025
 - Key packages: lme4, emmeans, tidyverse, ggplot2
