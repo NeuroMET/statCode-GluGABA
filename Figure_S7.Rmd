@@ -1,0 +1,53 @@
+# Quality Control
+```{r FigS7, include = FALSE}
+
+# Merge dataset with QC data
+QC_data <- read_excel("neuromet_scm_quality_parameters.xlsx")
+
+NeuroMET <- NeuroMET %>%
+  full_join(QC_data, by = "BIDS MRI session")
+
+# --- Variables to plot. 
+qc_vars <- c(
+  "snr"          = "SNR (NAA)",
+  "fwhm_hz"      = "Water linewidth [Hz]",
+  "fwhm"         = "NAA linewidth [ppm]",
+  "GM_fraction"  = "Gray matter fraction",
+  "WM_fraction"  = "White matter fraction",
+  "CSF_fraction" = "CSF fraction",
+  "glu_relCRLB"  = "Glutamate relative CRLB [%]",
+  "gaba_relCRLB" = "GABA relative CRLB [%]",
+  "gln_relCRLB"  = "Glutamine relative CRLB [%]",
+  "pcc_precuneus_vol" = "PCC + precuneus volume [mm³]"
+)
+
+qc_long <- NeuroMET %>%
+  filter(!is.na(diagnose_group)) %>%
+  mutate(glu_relCRLB_pct  = glu_relCRLB  * 100,
+         gaba_relCRLB_pct = gaba_relCRLB * 100,
+         gln_relCRLB_pct  = gln_relCRLB  * 100) %>%
+  select(record_id, diagnose_group, visit,
+         snr, fwhm_hz, fwhm, GM_fraction, WM_fraction, CSF_fraction,
+         glu_relCRLB_pct, gaba_relCRLB_pct, gln_relCRLB_pct, pcc_precuneus_vol) %>%
+  rename(glu_relCRLB = glu_relCRLB_pct, gaba_relCRLB = gaba_relCRLB_pct, gln_relCRLB = gln_relCRLB_pct) %>%
+  pivot_longer(cols = all_of(names(qc_vars)), names_to = "metric", values_to = "value") %>%
+  filter(!is.na(value)) %>%
+  mutate(metric = recode(metric, !!!qc_vars),
+         metric = factor(metric, levels = unname(qc_vars)))
+
+qc_fig <- ggplot(qc_long, aes(x = diagnose_group, y = value, fill = visit)) +
+  geom_boxplot(outlier.size = 0.6, position = position_dodge(width = 0.8), width = 0.7) +
+  facet_wrap(~ metric, scales = "free_y", ncol = 3) +
+  theme_bw(base_size = 10) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.position = "bottom",
+        strip.text = element_text(size = 8)) +
+  labs(x = NULL, y = NULL, fill = "Visit",
+       title = "MRS data quality by diagnostic group and visit")
+
+qc_fig
+
+ggsave("FigureS7.jpg", qc_fig, width = 11, height = 9, dpi = 300)
+
+
+```
