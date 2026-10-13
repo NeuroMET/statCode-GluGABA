@@ -1,0 +1,144 @@
+# Senstivity analysis2: leave-one-out for model 3
+
+```{r Models3s, include = FALSE}
+
+lmer_nmm_glu_groupwise_s <- lmer(nmm ~ diagnose_group * ns(glu, df = 1) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu + (1|record_id), data = NeuroMETs, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# lmer_nmm_glu_groupwise_2_s <- lmer(nmm ~ diagnose_group * ns(glu, df = 2) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu+ (1|record_id), data = NeuroMETs, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# anova (lmer_nmm_glu_groupwise_s, lmer_nmm_glu_groupwise_2_s)
+
+lmer_nmm_gaba_groupwise_s <- lmer(nmm ~ diagnose_group * ns(gaba, df = 1) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu + (1|record_id), data = NeuroMETs, REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# lmer_nmm_gaba_groupwise_2_s <- lmer(nmm ~ diagnose_group * ns(gaba, df = 1) + ns(year, df = 2) + ns(age_bl, df = 2) + sex + edu + (1|record_id), data = NeuroMETs, REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# anova (lmer_nmm_gaba_groupwise_s, lmer_nmm_gaba_groupwise_2_s)
+
+lmer_nmm_glu_gaba_groupwise_s <- lmer(nmm ~ diagnose_group * ns(glu_gaba, df = 1) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu + (1|record_id),data = NeuroMETs, REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# lmer_nmm_glu_gaba_groupwise_2_s <- lmer(nmm ~ diagnose_group * ns(glu_gaba, df = 1) + ns(year, df = 2) + ns(age_bl, df = 2) + sex + edu + (1|record_id),data = NeuroMETs, REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# anova (lmer_nmm_glu_gaba_groupwise_s, lmer_nmm_glu_gaba_groupwise_2_s)
+```
+
+```{r Coeffs_Models3s, include = FALSE}
+##values nmm
+
+coef_glu_nmm_ab_s <- data.frame(emtrends(lmer_nmm_glu_groupwise_s, var = "glu", at = list(year = 0), data = NeuroMETs %>% filter(!is.na(pTau))) %>% confint) %>% mutate(label = paste0("β = ", round(glu.trend, 2), " [",  round(lower.CL, 2), "; ", round(upper.CL, 2), "], p = ", round((emtrends(lmer_nmm_glu_groupwise_s, var = "glu", at = list(year = 0), data = NeuroMETs %>% filter(!is.na(pTau))) %>% test())$p.value, 3))) %>% select(label)
+
+coef_gaba_nmm_ab_s <- data.frame(emtrends(lmer_nmm_gaba_groupwise_s, var = "gaba", at = list(year = 0), data = NeuroMETs %>% filter(!is.na(pTau))) %>% confint) %>% mutate(label = paste0("β = ", round(gaba.trend, 2), " [",  round(lower.CL, 2), "; ", round(upper.CL, 2), "], p = ", round((emtrends(lmer_nmm_gaba_groupwise_s, var = "gaba", at = list(year = 0), data = NeuroMETs %>% filter(!is.na(pTau))) %>% test())$p.value, 3))) %>% select(label)
+
+coef_glu_gaba_nmm_ab_s <- data.frame(emtrends(lmer_nmm_glu_gaba_groupwise_s, var = "glu_gaba", at = list(year = 0), data = NeuroMETs %>% filter(!is.na(pTau))) %>% confint) %>% mutate(label = paste0("β = ", round(glu_gaba.trend, 2), " [",  round(lower.CL, 2), "; ", round(upper.CL, 2), "], p = ", round((emtrends(lmer_nmm_glu_gaba_groupwise_s, var = "glu_gaba", at = list(year = 0), data = NeuroMETs %>% filter(!is.na(pTau))) %>% test())$p.value, 3))) %>% select(label)
+
+#compare with main analyses:
+data.frame(glutamate_original = coef_glu_nmm_ab[1:4,1], glutamate_sensitivity = coef_glu_nmm_ab_s [1:4,1],
+           gaba_original = coef_gaba_nmm_ab[1:4,1], gaba_sensitivity = coef_gaba_nmm_ab_s [1:4,1],
+           ratio_original = coef_glu_gaba_nmm_ab[1:4,1], ratio_sensitivity = coef_glu_gaba_nmm_ab_s[1:4,1])
+
+```
+
+
+```{r FigS3, fig.align = "center", warning=FALSE, message=FALSE,  results = "asis", fig.height = 4, fig.width=9, fig.cap= "**Figure S3: Fig. S3. Sensitivity analyses of visit 1 associations between 7T MRS glutamate, GABA, and log(glutamate/GABA) concentrations with memory ability measured by NMM.** After removing the same influential point as in S2, higher glutamate and GABA concentrations were still associated with better memory ability only in the AD Aβ+ group (glutamate original β [95% CI] = 0.17 [0.02; 0.33], p = 0.032; glutamate sensitivity analysis β = 0.22 [0.06; 0.39], p = 0.009; GABA original β = 0.53 [0.11; 0.95], p = 0.013; GABA sensitivity analysis β = 0.64 [0.20; 1.07], p = 0.004). Lower log(glutamate/GABA) ratios became trend-significant (ratio original β = -1.26 [-2.83; 0.32], p = 0.118, ratio sensitivity analysis β = -1.35 [-2.92; 0.23], p = 0.094). There were no associations between neurotransmitter levels and NMM in the non-dementia groups. Fits were derived from linear mixed-effects models adjusted for time, age, sex, diagnostic group and education (Model 3). Shaded areas represent 95% CIs. Individual data points at visit 1 are overlaid. All models were weighted based on CRLBs, and smaller points indicate higher uncertainty (i.e., larger CRLBs). *Abbreviations: AD = Alzheimer’s disease, Aβ+ = Amyloid-beta positive by plasma p-Tau181, CN = cognitively normal, CRLB = Cramér-Rao lower bound, GABA = gamma-aminobutyric acid, MCI = mild cognitive impairment, MRS = magnetic resonance spectroscopy, NMM= NeuroMET Memory Metric.*"}
+
+new_data <- expand.grid(
+    diagnose_group = levels(NeuroMETs$diagnose_group)[1:4],
+    glu = seq(min(NeuroMETs$glu, na.rm = TRUE), max(NeuroMETs$glu, na.rm = TRUE), length.out = 100),
+    year = 0,
+    age_bl = mean(NeuroMETs$age_bl, na.rm = TRUE),
+    edu = mean(NeuroMETs$edu, na.rm = TRUE),
+    sex = as.factor(1)  # or change to "male" or both if needed
+  )
+
+  # Predict values and confidence intervals
+  preds <- predict(lmer_nmm_glu_groupwise_s, newdata = new_data, re.form = NA, se.fit = TRUE)
+  new_data$pred <- preds$fit
+  new_data$lower <- preds$fit - 1.96 * preds$se.fit
+  new_data$upper <- preds$fit + 1.96 * preds$se.fit
+
+  # Create ggplot
+  D <- ggplot(new_data, aes(x = glu, y = pred, color =  diagnose_group)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill =  diagnose_group), alpha = 0.2, colour = NA) +
+    geom_line(size = 1.2) +
+    geom_point(data = NeuroMETs %>% filter(!is.na(glu) & visit == "t1"),
+               aes(x = glu, y = nmm, group = diagnose_group, size = glu_CRLB), 
+               alpha = 0.5) +
+    labs(x = "Glutamate [mmol/L]", y = "Memory Ability (NMM) [logits]", color = "", fill = "") +
+      scale_color_manual(values=c(diagnose_colors, diagnose_colors[4], diagnose_colors[1])) +
+  scale_fill_manual(values=c(diagnose_colors, diagnose_colors[4], diagnose_colors[1])) +  
+  scale_size_continuous(range = c(0.8, 2.5), name = "CRLB-based size")+
+    theme_minimal()+ 
+  guides(color = "none", fill = "none", size = "none") 
+  # theme(legend.position = c(0.4, 0.95), legend.direction = "horizontal",legend.box = "horizontal")
+  
+##### plot 3E
+
+new_data <- expand.grid(
+    diagnose_group = levels(NeuroMETs$diagnose_group)[1:4],
+    gaba = seq(min(NeuroMETs$gaba, na.rm = TRUE), max(NeuroMETs$gaba, na.rm = TRUE), length.out = 100),
+    year = 0,
+    age_bl = mean(NeuroMETs$age_bl, na.rm = TRUE),
+    edu = mean(NeuroMETs$edu, na.rm = TRUE),
+    sex = as.factor(1)  # or change to "male" or both if needed
+  )
+
+  # Predict values and confidence intervals
+  preds <- predict(lmer_nmm_gaba_groupwise_s, newdata = new_data, re.form = NA, se.fit = TRUE)
+  new_data$pred <- preds$fit
+  new_data$lower <- preds$fit - 1.96 * preds$se.fit
+  new_data$upper <- preds$fit + 1.96 * preds$se.fit
+
+  # Create ggplot
+  E <- ggplot(new_data, aes(x = gaba, y = pred, color =  diagnose_group)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill =  diagnose_group), alpha = 0.2, colour = NA) +
+    geom_line(size = 1.2) +
+    geom_point(data = NeuroMETs %>% filter(!is.na(gaba) & visit == "t1"),
+               aes(x = gaba, y = nmm, group = diagnose_group, size = gaba_CRLB), 
+                alpha = 0.5) +
+    labs(x = "GABA [mmol/L]", y = "Memory Ability (NMM) [logits]", color = "", fill = "") +
+      scale_color_manual(values=c(diagnose_colors, diagnose_colors[4], diagnose_colors[1])) +
+  scale_fill_manual(values=c(diagnose_colors, diagnose_colors[4], diagnose_colors[1])) +  
+  scale_size_continuous(range = c(0.8, 2.5), name = "CRLB-based size")+
+  theme_minimal()
+  # guides(color = guide_legend(nrow = 2, byrow = TRUE), fill = guide_legend(nrow = 2, byrow = TRUE), size = "none") +
+  # theme(legend.position = c(0.4, 0.95), legend.direction = "horizontal",legend.box = "horizontal")
+  
+##### plot 3F
+
+new_data <- expand.grid(
+    diagnose_group = levels(NeuroMETs$diagnose_group)[1:4],
+    glu_gaba = seq(min(NeuroMETs$glu_gaba, na.rm = TRUE), max(NeuroMETs$glu_gaba, na.rm = TRUE), length.out = 100),
+    year = 0,
+    age_bl = mean(NeuroMETs$age_bl, na.rm = TRUE),
+    edu = mean(NeuroMETs$edu, na.rm = TRUE),
+    sex = as.factor(1)  # or change to "male" or both if needed
+  )
+
+  # Predict values and confidence intervals
+  preds <- predict(lmer_nmm_glu_gaba_groupwise_s, newdata = new_data, re.form = NA, se.fit = TRUE)
+  new_data$pred <- preds$fit
+  new_data$lower <- preds$fit - 1.96 * preds$se.fit
+  new_data$upper <- preds$fit + 1.96 * preds$se.fit
+
+  # Create ggplot
+  F <- ggplot(new_data, aes(x = glu_gaba, y = pred, color =  diagnose_group)) +
+    geom_ribbon(aes(ymin = lower, ymax = upper, fill =  diagnose_group), alpha = 0.2, colour = NA) +
+    geom_line(size = 1.2) +
+    geom_point(data = NeuroMETs %>% filter(!is.na(glu_gaba) & visit == "t1"),
+               aes(x = glu_gaba, y = nmm, group = diagnose_group, 
+               size = glu_gaba_CRLB), alpha = 0.5) +
+    labs(x = "log(Glutamate/GABA)", y = "Memory Ability (NMM) [logits]", color = "", fill = "") +
+      scale_color_manual(values=c(diagnose_colors, diagnose_colors[4], diagnose_colors[1])) +
+  scale_fill_manual(values=c(diagnose_colors, diagnose_colors[4], diagnose_colors[1])) +  
+  scale_size_continuous(range = c(0.8, 2.5), name = "CRLB-based size")+
+  theme_minimal()+
+  guides(color = "none", fill = "none", size = "none") 
+  # theme(legend.position = c(0.4, 0.95), legend.direction = "horizontal",legend.box = "horizontal")
+
+  
+PlotS3  <- (D+E+F) &
+  theme(legend.position = "top") 
+PlotS3 
+
+ggsave(
+  filename = "FigureS3.jpg",
+  plot = PlotS3,
+  width = 9,  
+  height = 4,
+  dpi = 300
+)
+  
+```
