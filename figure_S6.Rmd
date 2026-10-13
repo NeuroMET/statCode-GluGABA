@@ -1,0 +1,180 @@
+# Non-linear age and Glu lower in females
+
+```{r Figure S6, fig.align = "center", warning=FALSE, message=FALSE,  results = "asis", fig.height = 7, fig.width=10, fig.cap= "**Fig S6: Age-related trajectories and sex differences in 7T MRS glutamate, GABA, and their ratio at visit 1. (A–C)** Age at visit 1 had a trend-wise non-linear effect on the glutamate concentrations with a minimum around 70 years (F(2, 83.44) = 2.77, P = 0.069, Model 1), while GABA and the glutamate/GABA ratio exhibited no substantial association. **(D–F)** Female participants showed lower glutamate levels than males with an estimated difference of -0.82 mmol/L (95% CI = [-1.27; -0.37], P < 0.001). No sex differences were observed for GABA or the glutamate/GABA ratio. *Abbreviations: AD = Alzheimer’s Disease, Aβ+ = Amyloid-beta positive by plasma p-Tau181, CN = Cognitively Normal, GABA = Gamma-Aminobutyric Acid, MCI = Mild Cognitive Impairment, MRS = Magnetic Resonance Spectroscopy.*"}
+
+ylim_min_glu <- 9.9
+ylim_max_glu <- 17.6
+ylim_min_gaba <- 1.75 
+ylim_max_gaba <- 4.80
+ylim_min_glu_gaba <- 0.95
+ylim_max_glu_gaba <- 1.90
+
+plot_age_emmeans <- function(model, y_lab, data, outcome_var, size_var = NULL, age_seq = seq(50, 90, by = 1)) {
+  
+  # emmeans: Alterseffekt berechnen bei visit 1 (year = 0) und sex = 1
+  em_age <- emmeans(model,
+                    ~ age_bl,
+                    at = list(age_bl = age_seq),
+                    cov.reduce = list(year = function(x) 0, sex = function(x) 1))# Jahr = 0 (Baseline), sex = female
+  
+  # Konfidenzintervalle sicherstellen
+  em_age <- regrid(em_age)
+  
+  # Daten fürs Plotten
+  df_em <- as.data.frame(em_age)
+  df_points <- data %>% filter(!is.na(!!sym(outcome_var)) & visit == "t1")
+  
+  # Plot 
+  plot <- ggplot(df_em, aes(x = age_bl, y = emmean)) +
+    geom_ribbon(aes(ymin = lower.CL, ymax = upper.CL), fill = "#264653", alpha = 0.2) +
+    geom_line(size = 1.2, color = "#264653")
+  
+  if (!is.null(size_var)) {
+    plot <- plot +
+      geom_point(
+        data = df_points,
+        aes(x = age_bl, y = !!sym(outcome_var), color = diagnose_group, size = !!sym(size_var)),
+        alpha = 0.8
+      ) +
+      scale_size_continuous(range = c(0.8, 2.5), name = "CRLB-based size")
+  } else {
+    plot <- plot +
+      geom_point(
+        data = df_points,
+        aes(x = age_bl, y = !!sym(outcome_var), color = diagnose_group),
+        size = 1.5,
+        alpha = 0.8
+      )
+  }
+  
+  plot +
+    scale_color_manual(values = diagnose_colors, name = "Clinical Diagnose at Visit 1") +
+    labs(x = "Age at Visit 1 [years]", y = y_lab, color = "") +
+    theme_minimal() +
+    theme(legend.position = "top")
+}
+
+A <- plot_age_emmeans(lmer_long_glu_groupwise, "Glutamate [mmol/L]", data = NeuroMET, outcome_var = "glu", size_var = "glu_CRLB")
+B <- plot_age_emmeans(lmer_long_gaba_groupwise, "GABA [mmol/L]", data = NeuroMET, outcome_var = "gaba", size_var = "gaba_CRLB")+
+    guides(size = "none")
+C <- plot_age_emmeans(lmer_long_glu_gaba_groupwise, "log(Glutamate / GABA)", data = NeuroMET, outcome_var = "glu_gaba", size_var = "glu_gaba_CRLB")+
+    guides(size = "none")
+
+
+#####plot DEF
+mean_male_glu <- (em_sex_glu %>% data.frame %>% filter (sex == 0))["emmean"] %>% round(2)
+mean_female_glu <- (em_sex_glu %>% data.frame %>% filter (sex == 1))["emmean"] %>% round(2)
+mean_male_gaba <- (em_sex_gaba %>% data.frame %>% filter (sex == 0))["emmean"] %>% round(2)
+mean_female_gaba <- (em_sex_gaba %>% data.frame %>% filter (sex == 1))["emmean"] %>% round(2)
+mean_male_glu_gaba <- (em_sex_glu_gaba %>% data.frame %>% filter (sex == 0))["emmean"] %>% round(2)
+mean_female_glu_gaba <- (em_sex_glu_gaba %>% data.frame %>% filter (sex == 1))["emmean"] %>% round(2)
+
+
+
+D <- NeuroMET %>%
+    filter(visit == "t1") %>%
+    select(record_id, diagnose, glu, gaba, glu_gaba, glu_CRLB, gaba_CRLB, glu_gaba_CRLB, pTau_v1_group, diagnose_group, sex) %>%
+    pivot_longer(cols = c(glu, gaba, glu_gaba), names_to = "biomarker", values_drop_na = TRUE) %>%
+    mutate(
+        biomarker = factor(biomarker, levels = c("glu", "gaba", "glu_gaba")),
+        sex = factor(sex, labels = c(glue("Male \nGlutamate Mean \n{mean_male_glu}[mmol/L]"), 
+                                     glue("Female \nGlutamate Mean \n{mean_female_glu}[mmol/L]")))
+    ) %>%
+    filter(biomarker == "glu") %>%
+    ggplot(aes(x = sex, y = value, fill = sex)) + 
+    geom_boxplot(outlier.shape = NA, lwd = 0.3, alpha = 0.9) +
+    geom_jitter(aes(color = diagnose_group, size = glu_CRLB), 
+                position = position_jitter(0.2), alpha = 0.8) +
+    labs(title = NULL, x = NULL, y = "Glutamate [mmol/L]") +
+    scale_fill_manual(values = c("#2A9D8F", "#866f85")) +
+    scale_color_manual(values = diagnose_colors, name = "Clinical Diagnose at Visit 1") +
+    scale_size_continuous(range = c(0.8, 2.5), name = "CRLB-based Size for \nGlutamate and GABA") +  # optional legend
+    theme_minimal() +
+    theme(
+        panel.grid = element_blank(),
+        axis.line = element_line(colour = "black"),
+        legend.position = "none",  # Or "none" if you want to hide it
+        axis.text.x = element_text(face = "bold")
+    )+
+    guides( fill = "none")+
+    scale_y_continuous(expand = expansion(mult = c(0.05, 0.10)))+
+  geom_signif(
+  xmin = 1, xmax = 2,
+  annotations = "***",
+  y_position = max(NeuroMET$glu, na.rm = TRUE) + 0.3,
+  tip_length = 0.02,
+  textsize = 5
+)
+
+E <- NeuroMET %>%
+    filter(visit == "t1") %>%
+    select(record_id, diagnose, glu, gaba, glu_gaba, glu_CRLB, gaba_CRLB, glu_gaba_CRLB, pTau_v1_group, diagnose_group, sex) %>%
+    pivot_longer(cols = c(glu, gaba, glu_gaba), names_to = "biomarker", values_drop_na = TRUE) %>%
+    mutate(
+        biomarker = factor(biomarker, levels = c("glu", "gaba", "glu_gaba")),
+        sex = factor(sex, labels = c(glue("Male \nGABA Mean \n{mean_male_gaba}[mmol/L]"), 
+                                     glue("Female \nGABA Mean \n{mean_female_gaba}[mmol/L]"))) 
+    ) %>%
+    filter(biomarker == "gaba") %>%
+    ggplot(aes(x = sex, y = value, fill = sex)) + 
+    geom_boxplot(outlier.shape = NA, lwd = 0.3, alpha = 0.9) +
+    geom_jitter(aes(color = diagnose_group, size = gaba_CRLB), 
+                position = position_jitter(0.2), alpha = 0.8) +
+    labs(title = NULL, x = NULL, y = "GABA [mmol/L]") +
+    scale_fill_manual(values = c("#2A9D8F", "#866f85")) +
+    scale_color_manual(values = diagnose_colors, name = "Clinical Diagnose at Visit 1") +
+    scale_size_continuous(range = c(0.8, 2.5), name = "CRLB-based Size for \nGlutamate and GABA") +  # optional legend
+    theme_minimal() +
+    theme(
+        panel.grid = element_blank(),
+        axis.line = element_line(colour = "black"),
+        legend.position = "none",  # Or "none" if you want to hide it
+        axis.text.x = element_text(face = "bold"))+
+    guides(size = "none", fill = "none", color = "none")
+  
+  
+  
+F <- NeuroMET %>%
+    filter(visit == "t1") %>%
+    select(record_id, diagnose, glu, gaba, glu_gaba, glu_gaba_CRLB, pTau_v1_group, diagnose_group, sex) %>%
+    pivot_longer(cols = c(glu, gaba, glu_gaba), names_to = "biomarker", values_drop_na = TRUE) %>%
+    mutate(
+        biomarker = factor(biomarker, levels = c("glu", "gaba", "glu_gaba")),
+        sex = factor(sex, labels = c(glue("Male \nRatio Mean \n{mean_male_glu_gaba}"), 
+                                     glue("Female \nRatio Mean \n{mean_female_glu_gaba}")))
+    ) %>%
+    filter(biomarker == "glu_gaba") %>%
+    ggplot(aes(x = sex, y = value, fill = sex)) + 
+    geom_boxplot(outlier.shape = NA, lwd = 0.3, alpha = 0.9) +
+    geom_jitter(aes(color = diagnose_group, size = glu_gaba_CRLB), 
+                position = position_jitter(0.2), alpha = 0.8) +
+    labs(title = NULL, x = NULL, y = "log(Glutamate/GABA)") +
+    scale_fill_manual(values = c("#2A9D8F", "#866f85"), name = "") +
+    scale_color_manual(values = diagnose_colors, name = "Clinical Diagnose at Visit 1") +
+    scale_size_continuous(range = c(0.8, 2.5), name = "CRLB-based size")+
+    theme_minimal() +
+    theme(
+        panel.grid = element_blank(),
+        axis.line = element_line(colour = "black"),
+        legend.position = "none",  # Or "none" if you want to hide it
+        axis.text.x = element_text(face = "bold"))+
+    guides(size = "none", fill = "none", color = "none")
+
+abc <- (A + B + C) + 
+  plot_layout(guides = "collect") & 
+  theme(legend.position = "none")
+
+# Legenden in D, E, F unterdrücken
+def <- (D + E + F) +
+  plot_layout(guides = "collect") &
+  theme(legend.position = "bottom")
+
+# Zusammensetzen mit unterschiedlichen Höhen
+final_plot <- abc / def + 
+  plot_layout(heights = c(1, 1.3)) + 
+  plot_annotation(tag_levels = 'A') & 
+  theme(plot.tag.position = "topleft")
+final_plot
+
+ggsave("FigureS6.jpg",height = 7.5, width=10, dpi = 300)
+```
