@@ -1,0 +1,155 @@
+```{r Models1, include = FALSE}
+
+lmer_long_glu_groupwise <- lmer(glu ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+#test for best fit
+# lmer_long_glu_groupwise_2 <- lmer(glu ~ diagnose_group * year + ns(age_bl, df = 3) + sex + (1|record_id),
+#        data = NeuroMET,REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# anova(lmer_long_glu_groupwise, lmer_long_glu_groupwise_2)
+
+
+lmer_long_gaba_groupwise <- lmer(gaba ~ diagnose_group * year + ns(age_bl, df = 1) + sex+ (1|record_id),
+       data = NeuroMET,REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+#test for best fit
+# lmer_long_gaba_groupwise_2 <- lmer(gaba ~ diagnose_group * year + ns(age_bl, df = 2)+ sex  + (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# anova(lmer_long_gaba_groupwise , lmer_long_gaba_groupwise_2)
+
+
+lmer_long_glu_gaba_groupwise   <- lmer(glu_gaba ~ diagnose_group * year + ns(age_bl, df = 1) + sex+ (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+#test for best fit
+# lmer_long_glu_gaba_groupwise_2 <- lmer(glu_gaba ~ diagnose_group * year + ns(age_bl, df = 2)+sex  + (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# anova(lmer_long_glu_gaba_groupwise  , lmer_long_glu_gaba_groupwise_2)
+
+
+lmer_long_pTau_groupwise <- lmer(pTau ~ diagnose_group * year + ns(age_bl, df = 1) + sex +(1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit)
+# lmer_long_pTau_groupwise_2 <- lmer(pTau ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id),
+#        data = NeuroMET,REML = TRUE, na.action = na.omit)
+# anova(lmer_long_pTau_groupwise, lmer_long_pTau_groupwise_2)
+
+
+lmer_long_nmm_groupwise <- lmer(nmm ~ diagnose_group * year + ns(age_bl, df = 1) + sex+ (1|record_id),
+       data = NeuroMET,REML = TRUE, na.action = na.omit)
+# lmer_long_nmm_groupwise_2 <- lmer(nmm ~ diagnose_group * year + ns(age_bl, df = 2) + sex+ (1|record_id),
+#        data = NeuroMET,REML = TRUE, na.action = na.omit)
+# anova(lmer_long_nmm_groupwise, lmer_long_nmm_groupwise_2)
+
+# Model GFAP
+lmer_long_gfap_groupwise <- lmer(GFAP ~ diagnose_group * year + ns(age_bl, df = 1) + sex + (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit)
+# lmer_long_gfap_groupwise_2 <- lmer(GFAP ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit)
+# anova(lmer_long_gfap_groupwise, lmer_long_gfap_groupwise_2)
+
+lmer_long_gln_groupwise       <- lmer(gln ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = gln_inv_aCRLB)
+# lmer_long_gln_groupwise_2       <- lmer(gln ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id),
+#        data = NeuroMET,REML = TRUE, na.action = na.omit, weights = gln_inv_aCRLB)
+# anova(lmer_long_gln_groupwise, lmer_long_gln_groupwise_2)
+
+lmer_long_glu_gln_groupwise       <- lmer(glu_gln ~ diagnose_group * year + ns(age_bl, df = 1) + sex + (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = w_log_glu_gln_ratio)
+# lmer_long_glu_gln_groupwise_2       <- lmer(glu_gln ~ diagnose_group * year + ns(age_bl, df = 2) + sex + (1|record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = w_log_glu_gln_ratio)
+# anova(lmer_long_glu_gln_groupwise, lmer_long_glu_gln_groupwise_2)
+
+```
+
+```{r Models2, include = FALSE}
+# Define models for Glutamate, GABA, and Glu/GABA
+model_glu <- lmer(glu ~ ns(pTau, df = 1) * ns(year, df = 1) + ns(age_bl, df = 2) + sex + (1 | record_id),
+                  data = NeuroMET, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# model_glu_2 <- lmer(glu ~ ns(pTau, df = 1) * ns(year, df = 1) + ns(age_bl, df = 3) + sex+ (1 | record_id),
+#                   data = NeuroMET, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# anova(model_glu, model_glu_2)
+
+model_gaba <- lmer(gaba ~ ns(pTau, df = 1) * ns(year, df = 1) + ns(age_bl, df = 1) + sex + (1 | record_id),
+                   data = NeuroMET, REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# model_gaba_2 <- lmer(gaba ~ ns(pTau, df = 1) * ns(year, df = 1) + ns(age_bl, df = 2) + sex+ (1 | record_id),
+#                     data = NeuroMET, REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# anova(model_gaba, model_gaba_2)
+
+model_glu_gaba <- lmer(glu_gaba ~ ns(pTau, df = 1) * ns(year, df = 1) + ns(age_bl, df = 1) + sex + (1 | record_id),
+                       data = NeuroMET, REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# model_glu_gaba_2 <- lmer(glu_gaba ~ ns(pTau, df = 1) * ns(year, df = 1) + ns(age_bl, df = 2) + sex+ (1 | record_id),
+#                        data = NeuroMET, REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# anova(model_glu_gaba, model_glu_gaba_2)
+```
+
+
+```{r Models3, include = FALSE}
+
+lmer_nmm_glu_groupwise <- lmer(nmm ~ diagnose_group * ns(glu, df = 1) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu + (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# lmer_nmm_glu_groupwise_2 <- lmer(nmm ~ diagnose_group * ns(glu, df = 1) + ns(year, df = 2) + ns(age_bl, df = 2) + sex + edu+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# anova (lmer_nmm_glu_groupwise, lmer_nmm_glu_groupwise_2)
+
+lmer_nmm_gaba_groupwise <- lmer(nmm ~ diagnose_group * ns(gaba, df = 1) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu + (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# lmer_nmm_gaba_groupwise_2 <- lmer(nmm ~ diagnose_group * ns(gaba, df = 2) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu + (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# anova (lmer_nmm_gaba_groupwise, lmer_nmm_gaba_groupwise_2)
+
+lmer_nmm_glu_gaba_groupwise <- lmer(nmm ~ diagnose_group * ns(glu_gaba, df = 1) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu + (1|record_id),data = NeuroMET, REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# lmer_nmm_glu_gaba_groupwise_2 <- lmer(nmm ~ diagnose_group * ns(glu_gaba, df = 1) + ns(year, df = 2) + ns(age_bl, df = 1) + sex + edu + (1|record_id),data = NeuroMET, REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# anova (lmer_nmm_glu_gaba_groupwise, lmer_nmm_glu_gaba_groupwise_2)
+```
+
+```{r Models4, include = FALSE}
+
+NeuroMET <- NeuroMET %>% mutate(pcc_precuneus_vol= Whole_pcc_cs_long + Whole_precuneus_cs_long)
+
+lmer_GFAP_glu_groupwise <- lmer(glu ~ diagnose_group * ns(GFAP, df = 1) + ns(pcc_precuneus_vol ,df = 1)+ ns(year, df = 1) + ns(age_bl, df = 2) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# lmer_GFAP_glu_groupwise_2 <- lmer(glu ~ diagnose_group * ns(GFAP, df = 2) + ns(pcc_precuneus_vol,df = 1) + ns(year, df = 1) + ns(age_bl, df = 2) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# anova (lmer_GFAP_glu_groupwise, lmer_GFAP_glu_groupwise_2)
+
+lmer_GFAP_gaba_groupwise <- lmer(gaba ~ diagnose_group * ns(GFAP, df = 1)+ ns(pcc_precuneus_vol,df = 1) + ns(year, df = 1) + ns(age_bl, df = 1) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# lmer_GFAP_gaba_groupwise_2 <- lmer(gaba ~ diagnose_group * ns(GFAP, df = 1)+ ns(pcc_precuneus_vol,df = 1) + ns(year, df = 1) + ns(age_bl, df = 2) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# anova (lmer_GFAP_gaba_groupwise, lmer_GFAP_gaba_groupwise_2)
+
+lmer_GFAP_glu_gaba_groupwise <- lmer(glu_gaba ~ diagnose_group * ns(GFAP, df = 1)+ ns(pcc_precuneus_vol,df = 2)  + ns(year, df = 1) + ns(age_bl, df = 1) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# lmer_GFAP_glu_gaba_groupwise_2 <- lmer(glu_gaba ~ diagnose_group * ns(GFAP, df = 1)+ ns(pcc_precuneus_vol,df = 2) + ns(year, df = 1) + ns(age_bl, df = 1) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# anova (lmer_GFAP_glu_gaba_groupwise, lmer_GFAP_glu_gaba_groupwise_2)
+
+lmer_GFAP_gln_groupwise <- lmer(gln ~ diagnose_group * ns(GFAP, df = 2)+ ns(pcc_precuneus_vol,df = 1)  + ns(year, df = 1) + ns(age_bl, df = 2) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = gln_inv_aCRLB)
+# lmer_GFAP_gln_groupwise_2 <- lmer(gln ~ diagnose_group * ns(GFAP, df = 2) + ns(pcc_precuneus_vol,df = 1) + ns(year, df = 1) + ns(age_bl, df = 2) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = gln_inv_aCRLB)
+# anova (lmer_GFAP_gln_groupwise, lmer_GFAP_gln_groupwise_2)
+
+lmer_GFAP_glu_gln_groupwise <- lmer(glu_gln ~ diagnose_group * ns(GFAP, df = 2) + ns(pcc_precuneus_vol,df = 1) + ns(year, df = 1) + ns(age_bl, df = 1) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = w_log_glu_gln_ratio)
+# lmer_GFAP_glu_gln_groupwise_2 <- lmer(glu_gln ~ diagnose_group * ns(GFAP, df = 2)+ ns(pcc_precuneus_vol,df = 1)  + ns(year, df = 1) + ns(age_bl, df = 2) + sex+ (1|record_id), data = NeuroMET, REML = TRUE, na.action = na.omit, weights = w_log_glu_gln_ratio)
+# anova (lmer_GFAP_glu_gln_groupwise, lmer_GFAP_glu_gln_groupwise_2)
+```
+
+
+```{r Model_age_groupwise, include = FALSE}
+
+model_age_glu_groupwise       <- lmer(glu ~ diagnose_group* year * ns(age_bl, df = 1) + sex + (1 | record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# model_age_glu_groupwise_2       <- lmer(glu ~ diagnose_group* year * ns(age_bl, df = 2)  + sex + (1 | record_id),
+#        data = NeuroMET,REML = TRUE, na.action = na.omit, weights = glu_inv_aCRLB)
+# anova(model_age_glu_groupwise, model_age_glu_groupwise_2)
+
+model_age_gaba_groupwise       <- lmer(gaba ~ diagnose_group * year * ns(age_bl, df = 1)  + sex + (1 | record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# model_age_gaba_groupwise_2       <- lmer(gaba ~ diagnose_group * year * ns(age_bl, df = 2) + sex + (1 | record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = gaba_inv_aCRLB)
+# anova(model_age_gaba_groupwise, model_age_gaba_groupwise_2)
+
+model_age_glu_gaba_groupwise       <- lmer(glu_gaba ~ diagnose_group * year * ns(age_bl, df = 1) + sex + (1 | record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# model_age_glu_gaba_groupwise_2       <- lmer(glu_gaba ~ diagnose_group * year * ns(age_bl, df = 2) + sex + (1 | record_id), data = NeuroMET,REML = TRUE, na.action = na.omit, weights = w_log_glu_gaba_ratio)
+# anova(model_age_glu_gaba_groupwise, model_age_glu_gaba_groupwise_2)
+
+
+```
+
+```{r effects_age_sex, message=FALSE, warning=FALSE}
+# Summary of the model
+model_glu_summary <- summary(lmer_long_glu_groupwise)
+#model_glu_summary$coefficients
+model_glu_summary_ci <- confint(lmer_long_glu_groupwise, level = 0.95, method = "Wald")
+
+
+# Summary of the model
+model_gaba_summary <- summary(lmer_long_gaba_groupwise)
+#model_gaba_summary$coefficients
+model_gaba_summary_ci <- confint(lmer_long_gaba_groupwise, level = 0.95, method = "Wald")
+
+
+# Summary of the model
+model_glu_gaba_summary <- summary(lmer_long_glu_gaba_groupwise)
+#model_glu_gaba_summary$coefficients
+model_glu_gaba_summary_ci <- confint(lmer_long_glu_gaba_groupwise, level = 0.95, method = "Wald")
+
+
+em_sex_glu <- emmeans(lmer_long_glu_groupwise, pairwise ~ sex, cov.reduce = list(year = function(x) 0))
+em_sex_gaba <- emmeans(lmer_long_gaba_groupwise, pairwise ~ sex, cov.reduce = list(year = function(x) 0))
+em_sex_glu_gaba <- emmeans(lmer_long_glu_gaba_groupwise, pairwise ~ sex, cov.reduce = list(year = function(x) 0))
+
+```
